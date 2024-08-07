@@ -40,28 +40,49 @@ def save_leads(leads):
     return df_result
 
 
-emails = read_lead_emails("files/unique_leads.csv")
-results = query_leads(emails)
-save_leads(results)
+# emails = read_lead_emails("files/unique_leads.csv")
+# results = query_leads(emails)
+# save_leads(results)
 
 
-def check_duplicates(file_path, header_names, check_column):
+def remove_duplicates(file_path, check_column):
     # Read the CSV file into a DataFrame
-    df = pd.read_csv(file_path, header=None, names=header_names)
+    df = pd.read_csv(file_path)
 
-    # Check for duplicates in the 'email' column
+    # Identify and remove duplicates
     duplicates = df[df.duplicated(subset=check_column, keep=False)]
+    print("Number of duplicated lead_email entries removed:")
+    print(duplicates.count())
 
-    # Print the duplicate entries
-    print(duplicates)
-    # Save the duplicate entries to a new CSV file
-    duplicates.to_csv("files/duplicated_leads.csv", index=False)
+    df_cleaned = df.drop_duplicates(subset=check_column, keep=False)
+    print("Number of unique lead_email entries:")
+    print(df_cleaned.count())
+
+    # Save the cleaned and duplicate entries to new CSV files
+    df_cleaned.to_csv("files/query_leads_cleaned.csv", index=False)
+    duplicates.to_csv(
+        "files/query_leads_duplicate_lead_email.csv", index=False)
+    print("✅ Files saved successfully!")
 
 
-check_duplicates("files/leads.csv", [
-    'lead_id', 'lead_email', 'client_id', 'client_name', 'client_email', 'fc_contact_owner_id'], 'lead_email')
+# remove_duplicates("files/query_leads.csv", 'lead_email')
 
-# print("___________________________________________")
-# print("Unique Leads:")
-# check_duplicates("files/unique_leads.csv", [
-#     'lead_id', 'lead_name', 'lead_email'], 'lead_email')
+
+def remove_no_owner(file_path):
+    df = pd.read_csv(file_path)
+
+    leads_without_contact_owner = df[df['fc_contact_owner_id'] == 0]
+    print("Number of leads without owner:")
+    print(leads_without_contact_owner.count())
+
+    cleaned_leads = df[df['fc_contact_owner_id'] != 0]
+    print("Number of leads with unique email and owner:")
+    print(cleaned_leads.count())
+
+    cleaned_leads.to_csv("files/query_leads_cleaned.csv", index=False)
+    leads_without_contact_owner.to_csv(
+        "files/query_leads_without_owner.csv", index=False)
+    print("✅ Files saved successfully!")
+
+
+remove_no_owner("files/query_leads_cleaned.csv")

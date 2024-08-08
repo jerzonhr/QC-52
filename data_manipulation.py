@@ -85,4 +85,4 @@ def remove_no_owner(file_path):
     print("✅ Files saved successfully!")
 
 
-remove_no_owner("files/query_leads_cleaned.csv")
+# remove_no_owner("files/query_leads_cleaned.csv")

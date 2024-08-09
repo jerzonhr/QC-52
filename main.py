@@ -114,11 +114,20 @@ def fill_reference_id_column(file_path, limit):
         print("✅ File updated successfully!")
 
 
+def filter_leads_by_status(file_path, status):
+    df = pd.read_csv(file_path)
+    filtered_df = df[df['status'] == status]
+    filtered_df.to_csv(f"files/{status}_query_leads.csv", index=False)
+    print(f"✅ {status} leads filtered successfully!")
+
+
 def main():
     # Your code here
     # add_reference_id_column("files/query_leads_cleaned.csv")
     # clear_reference_id_and_status("files/query_leads_cleaned.csv")
-    fill_reference_id_column("files/query_leads_cleaned.csv", 1000)
+    # fill_reference_id_column("files/query_leads_cleaned.csv", 1000)
+    # filter_leads_by_status("files/query_leads_cleaned.csv", "Success")
+    print("🚀 Done!")
 
 
 if __name__ == "__main__":

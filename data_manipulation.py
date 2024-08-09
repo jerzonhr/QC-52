@@ -1,3 +1,4 @@
+import logging
 import pandas as pd
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
@@ -86,3 +87,50 @@ def remove_no_owner(file_path):
 
 
 # remove_no_owner("files/query_leads_cleaned.csv")
+
+
+def update_db_leads_reference_id(file_path):
+    # Load the CSV file into a DataFrame
+    df = pd.read_csv(file_path)
+
+    # Create the SQLAlchemy engine and connect to the PostgreSQL database
+    engine = create_engine(os.getenv("DATABASE_URL"))
+
+    # Step 1: Create and load data into a temporary table with lead_email
+    temp_table_query = """
+    CREATE TABLE IF NOT EXISTS lead_temp (
+        id SERIAL PRIMARY KEY,
+        lead_id int4 NOT NULL,
+        lead_email varchar(100),
+        reference_id int8
+    );
+    """
+
+    with engine.connect() as connection:
+        # connection.execute(text(temp_table_query))
+        # connection.commit()
+        # df[['lead_id', 'lead_email', 'reference_id']].to_sql(
+        #     'lead_temp', connection, if_exists='replace', index=False, schema='public')
+        # print("Table 'lead_temp' created and data loaded.")
+
+        # Step 2: Perform the bulk update using lead_id and lead_email
+
+        update_query = text("""
+        UPDATE "public.lead" l
+        SET reference_id = lt.reference_id
+        FROM lead_temp lt
+        WHERE l.lead_id = lt.lead_id AND l.email = lt.lead_email;
+        """)
+        connection.execute(update_query)
+        connection.commit()
+        print("Bulk update completed.")
+
+    # Step 3: Drop the temporary table
+    #     drop_query = text("DROP TABLE IF EXISTS lead_temp;")
+    #     connection.execute(drop_query)
+    #     print("Temporary table 'lead_temp' dropped.")
+
+    print("✅ Database updated successfully!")
+
+
+update_db_leads_reference_id("files/Success_query_leads.csv")

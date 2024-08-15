@@ -20,6 +20,13 @@ PARAMS = {
     "responseType": "json"
 }
 
+UPDATE_PARAMS = {
+    "module": "cm",
+    "subModule": "contact",
+    "xmlString": "",
+    "responseType": "json"
+}
+
 
 def add_reference_id_column(file_path):
     df = pd.read_csv(file_path)
@@ -121,12 +128,68 @@ def filter_leads_by_status(file_path, status):
     print(f"✅ {status} leads filtered successfully!")
 
 
+def update_qualifyi_lead_nurturing(reference_id):
+    try:
+        UPDATE_PARAMS["xmlString"] = f"<fcRequest><cmContact><referenceId>{reference_id}</referenceId><_qualifyiLeadNurture8991633>Yes</_qualifyiLeadNurture8991633></cmContact></fcRequest>"
+        response = requests.post(
+            url=f"{FRANCONNECT_URL}/rest/dataservices/update", params=UPDATE_PARAMS, headers=HEADERS)
+        response.raise_for_status()
+        json_response = response.json().get("fcResponse")
+        if json_response.get("responseStatus") != "Error":
+            response_data = json_response.get("responseData")
+
+            return response_data.get("cmContact").get("status")
+        else:
+            raise Exception(
+                f"{json_response.get('responseData').get('error')}")
+    except requests.RequestException as e:
+        print(f"Error updating lead nurturing for {reference_id}: {e}")
+        return "Request Error"
+    except Exception as e:
+        print(f"Error updating lead nurturing for {reference_id}: {e}")
+        return "Error"
+
+
+def update_franconnect_leads(file_path, batch_size):
+    try:
+        df = pd.read_csv(file_path)
+
+        start_index = df[df['status'] == 'pending'].index.min()
+
+        batch_size = batch_size if batch_size < len(df) else len(df)
+
+        if start_index is not None:
+            print(f"🚩 start_index: {start_index}")
+            for index in range(start_index, start_index + batch_size):
+                # print(f"🔄 index: {index}, status: {df.at[index, 'status']}")
+
+                print(f"🔄 index: {index}")
+                print(f"==> email: {df.at[index, 'email']}")
+                print(f"==> reference_id: {df.at[index, 'reference_id']}")
+
+                reference_id = df.at[index, 'reference_id']
+                result = update_qualifyi_lead_nurturing(reference_id)
+
+                if result != "Error" and result != "Request Error":
+                    print("👍 Success!")
+                else:
+                    print("❌ Failed! Status updated")
+
+                df.at[index, 'status'] = result
+    except Exception as e:
+        print(f"Error updating leads: {e}")
+    finally:
+        df.to_csv(file_path, index=False)
+        print("✅ File updated successfully!")
+
+
 def main():
     # Your code here
     # add_reference_id_column("files/query_leads_cleaned.csv")
     # clear_reference_id_and_status("files/query_leads_cleaned.csv")
     # fill_reference_id_column("files/query_leads_cleaned.csv", 1000)
     # filter_leads_by_status("files/query_leads_cleaned.csv", "Success")
+    update_franconnect_leads("files/QC-54/lead_table.csv", batch_size=5000)
     print("🚀 Done!")
 
 

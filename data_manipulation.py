@@ -4,6 +4,7 @@ from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 import os
 
+
 load_dotenv()
 
 
@@ -133,4 +134,34 @@ def update_db_leads_reference_id(file_path):
     print("✅ Database updated successfully!")
 
 
-update_db_leads_reference_id("files/Success_query_leads.csv")
+# update_db_leads_reference_id("files/Success_query_leads.csv")
+
+def fetch_leads_from_db(file_path, limit):
+
+    engine = create_engine(os.getenv("DATABASE_URL"))
+
+    with engine.connect() as conn:
+        query = text("""SELECT lead_id, email, reference_id  
+                     FROM "public.lead"
+                     WHERE reference_id IS NOT NULL
+                    """)
+        result = conn.execute(query)
+        rows = result.fetchall()
+        print(f"==> rows : {len(rows)}")
+
+        df = pd.DataFrame(rows, columns=result.keys())
+        if 'status' not in df.columns:
+            df['status'] = "pending"
+        df.sort_values(by='lead_id', inplace=True)
+
+        if os.path.isfile(file_path):
+            print("✅ CSV file exists.")
+            df.to_csv(file_path, index=False, mode='a', header=False)
+        else:
+            print("❌ CSV file does not exist.")
+            df.to_csv(file_path, index=False)
+
+        print("🚀 Leads fetched successfully!")
+
+
+# fetch_leads_from_db("files/QC-54/lead_table.csv", 2000)

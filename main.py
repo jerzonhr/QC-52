@@ -189,7 +189,7 @@ def main():
     # clear_reference_id_and_status("files/query_leads_cleaned.csv")
     # fill_reference_id_column("files/query_leads_cleaned.csv", 1000)
     # filter_leads_by_status("files/query_leads_cleaned.csv", "Success")
-    update_franconnect_leads("files/QC-54/lead_table.csv", batch_size=5000)
+    update_franconnect_leads("files/QC-54/lead_table.csv", batch_size=10000)
     print("🚀 Done!")
 
 
